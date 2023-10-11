@@ -62,7 +62,7 @@ If defined regisers count will be limited.
 #define MODBUSTCP_PORT 	  502
 #define MODBUSTLS_PORT 	  802
 #define MODBUSIP_MINFRAME 2
-#define MODBUSIP_MAXFRAME 200
+#define MODBUSIP_MAXFRAME 252
 
 /*
 ModbusTCP and ModbusTLS timeouts
