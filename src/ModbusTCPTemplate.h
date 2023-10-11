@@ -351,6 +351,14 @@ void ModbusTCPTemplate<SERVER, CLIENT>::task() {
 			}
 			if (!BIT_CHECK(tcpServerConnection, n)) _reply = REPLY_OFF;	// No replay if it was responce to master
 			if (_reply != REPLY_OFF) {
+#if defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wvla"
+#endif
+				// Protect against unbounded VLA size so that it is reasonably safe to ignore the warning.
+				assert(_len <= MODBUSIP_MAXFRAME);
+				static_assert(sizeof(_MBAP.raw) < 8, "MBAP larger than expected");
+
 				_MBAP.length = __swap_16(_len+1);     // _len+1 for last byte from MBAP					
 				size_t send_len = (uint16_t)_len + sizeof(_MBAP.raw);
 				uint8_t sbuf[send_len];				
@@ -358,6 +366,10 @@ void ModbusTCPTemplate<SERVER, CLIENT>::task() {
 				memcpy(sbuf + sizeof(_MBAP.raw), _frame, _len);
 				tcpclient[n]->write(sbuf, send_len);
 				//tcpclient[n]->flush();
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic pop
+#endif
 			}
 			if (_frame) {
 				free(_frame);
@@ -408,11 +420,23 @@ uint16_t ModbusTCPTemplate<SERVER, CLIENT>::send(IPAddress ip, TAddress startreg
 	_MBAP.unitId		= unit;
 	bool writeResult;
 	{	// for sbuf isolation
+#if defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wvla"
+#endif
+		// Protect against unbounded VLA size so that it is reasonably safe to ignore the warning.
+		assert(_len <= MODBUSIP_MAXFRAME);
+		static_assert(sizeof(_MBAP.raw) < 8, "MBAP larger than expected");
+
 		size_t send_len = _len + sizeof(_MBAP.raw);
 		uint8_t sbuf[send_len];
 		memcpy(sbuf, _MBAP.raw, sizeof(_MBAP.raw));
 		memcpy(sbuf + sizeof(_MBAP.raw), _frame, _len);
 		writeResult = (tcpclient[p]->write(sbuf, send_len) == send_len);
+
+#if defined(__GNUC__)
+    #pragma GCC diagnostic pop
+#endif
 	}
 	if (!writeResult)
 		goto cleanup;
