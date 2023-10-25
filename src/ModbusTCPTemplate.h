@@ -169,6 +169,7 @@ bool ModbusTCPTemplate<SERVER, CLIENT>::connect(IPAddress ip, uint16_t port) {
 	if (p == -1)
 		return false;
 	tcpclient[p] = new CLIENT();
+	tcpclient[p]->setWriteNonBlocking(true);
 	BIT_CLEAR(tcpServerConnection, p);
 #if defined(ESP32) && defined(MODBUSIP_CONNECT_TIMEOUT)
 	if (!tcpclient[p]->connect(ip, port?port:defaultPort, MODBUSIP_CONNECT_TIMEOUT)) {
