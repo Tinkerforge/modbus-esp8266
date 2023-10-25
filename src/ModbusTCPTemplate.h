@@ -414,6 +414,11 @@ uint16_t ModbusTCPTemplate<SERVER, CLIENT>::send(IPAddress ip, TAddress startreg
 			goto cleanup;
 		if (!connect(ip))
 			goto cleanup;
+		if (tcpserver) {
+			p = getMaster(ip);
+		} else {
+			p = getSlave(ip);
+		}
 	}
 	_MBAP.transactionId	= __swap_16(transactionId);
 	_MBAP.protocolId	= __swap_16(0);
