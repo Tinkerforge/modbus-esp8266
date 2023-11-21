@@ -65,6 +65,7 @@ class ModbusTCPTemplate : public Modbus {
 	DArray<TTransaction, 2, 2> _trans;
 	#endif
 	int16_t		transactionId = 1;  // Last started transaction. Increments on unsuccessful transaction start too.
+	uint32_t	timeout_ms = MODBUSIP_TIMEOUT;
 	int8_t n = -1;
 	bool autoConnectMode = false;
 	uint16_t serverPort = 0;
@@ -108,6 +109,8 @@ class ModbusTCPTemplate : public Modbus {
 	inline void slave(uint16_t port = 0) { server(port); }	// Depricated
 	inline void master() { client(); }	// Depricated
 	inline void begin() { server(); }; 	// Depricated
+	inline void setTimeout(uint32_t timeout_ms_) { timeout_ms = timeout_ms_; }
+	inline uint32_t getTimeout() { return timeout_ms; }
 	void client();
 	void task();
 	void onConnect(cbModbusConnect cb = nullptr);
@@ -497,7 +500,7 @@ template <class SERVER, class CLIENT>
 void ModbusTCPTemplate<SERVER, CLIENT>::cleanupTransactions() {
 	#if defined(MODBUS_USE_STL)
 	for (auto it = _trans.begin(); it != _trans.end();) {
-		if (millis() - it->timestamp > MODBUSIP_TIMEOUT || it->forcedEvent != Modbus::EX_SUCCESS) {
+		if (millis() - it->timestamp > timeout_ms || it->forcedEvent != Modbus::EX_SUCCESS) {
 			Modbus::ResultCode res = (it->forcedEvent != Modbus::EX_SUCCESS)?it->forcedEvent:Modbus::EX_TIMEOUT;
 			if (it->cb)
 				it->cb(res, it->transactionId, nullptr);
@@ -510,7 +513,7 @@ void ModbusTCPTemplate<SERVER, CLIENT>::cleanupTransactions() {
 	size_t i = 0;
 	while (i < _trans.size()) {
 		TTransaction t =  _trans[i];
-		if (millis() - t.timestamp > MODBUSIP_TIMEOUT || t.forcedEvent != Modbus::EX_SUCCESS) {
+		if (millis() - t.timestamp > timeout_ms || t.forcedEvent != Modbus::EX_SUCCESS) {
 			Modbus::ResultCode res = (t.forcedEvent != Modbus::EX_SUCCESS)?t.forcedEvent:Modbus::EX_TIMEOUT;
 			if (t.cb)
 				t.cb(res, t.transactionId, nullptr);
