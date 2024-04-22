@@ -311,6 +311,22 @@ void ModbusTCPTemplate<SERVER, CLIENT>::task() {
 						//	tcpclient[n]->read();
 					}
 					else {
+						// Check if data is remaining after indicated frame length has been read.
+						// If there is any, enlarge the frame buffer and append data.
+						// This handles cases where _len is indicating fewer bytes than actually left.
+						int available_bytes = tcpclient[n]->available();
+						if (available_bytes > 0) {
+							size_t total_len = _len + available_bytes;
+							if (total_len <= MODBUSIP_MAXFRAME) {
+								uint8_t* new_frame = (uint8_t*) realloc(_frame, total_len);
+								if (new_frame) {
+									_frame = new_frame;
+									int read_bytes = tcpclient[n]->read(_frame + _len, available_bytes);
+									printf("ModbusTCP appended %i\n", read_bytes);
+								}
+							}
+						}
+
 						_reply = EX_PASSTHROUGH;
 						// Note on _reply usage
 						// it's used and set as ReplyCode by slavePDU and as exceptionCode by masterPDU
