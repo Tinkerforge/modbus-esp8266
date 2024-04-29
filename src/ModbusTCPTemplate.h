@@ -312,10 +312,11 @@ void ModbusTCPTemplate<SERVER, CLIENT>::task() {
 					}
 					else {
 						// Check if data is remaining after indicated frame length has been read.
-						// If there is any, enlarge the frame buffer and append data.
-						// This handles cases where _len is indicating fewer bytes than actually left.
+						// A full MBAP and above can be another Modbus packet. Anything below a full MBAP
+						// is either garbage or _len indicated fewer bytes than were actually present.
+						// If there is a possible trailing fragment, enlarge the frame buffer and append data.
 						int available_bytes = tcpclient[n]->available();
-						if (available_bytes > 0) {
+						if (available_bytes > 0 && available_bytes < sizeof(_MBAP.raw)) {
 							size_t total_len = _len + available_bytes;
 							if (total_len <= MODBUSIP_MAXFRAME) {
 								uint8_t* new_frame = (uint8_t*) realloc(_frame, total_len);
